@@ -2,6 +2,10 @@
 <html lang="sr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Carski novac</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#141c1a">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{--bg:#eceee8;--sf:#fbfbf7;--tx:#1c2825;--mu:#5d6b66;--ac:#2d7a6a;--br:#9a6a2a;--ln:#d3d8d0;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141c1a;--sf:#1e2927;--tx:#e6ede8;--mu:#93a49d;--ac:#6cc2ae;--br:#d1a05f;--ln:#2e3d39;color-scheme:dark}}
@@ -169,4 +173,5 @@ for(const f of inp.files){const d=await shrink(f);if(id==="mine")S.mine=d;else(S
 save();render()});
 render();
 $("crl").innerHTML=Object.keys(IMG).map(k=>IMG[k].map(x=>`<p><b>${k}</b>: ${x[1]} · <a href="${x[2]}" target="_blank" rel="noopener">Wikimedia Commons</a></p>`).join("")).join("")+"<p>Mali okrugli prikazi careva dolaze iz tabele nepoznatog izvora.</p>";
+if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}})}
 </script></body></html>
