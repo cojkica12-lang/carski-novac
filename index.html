@@ -50,19 +50,32 @@ input[type=search]{width:100%;padding:11px 14px;border-radius:10px;border:1px so
 #t{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;display:none;max-width:90%}
 button:focus-visible,.btn:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--ac);outline-offset:2px}
 .cr{margin-top:22px;font-size:13px;color:var(--mu)}.cr summary{cursor:pointer;font-weight:600}.cr p{margin:6px 0}.cr a{color:var(--ac)}
+
+.av img{object-position:left center}
+.bar{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.bar h2{font:600 24px/1.15 "Iowan Old Style",Palatino,Georgia,serif;margin:0}
+.bk{padding:8px 14px;border-radius:99px;border:1px solid var(--ln);background:var(--sf);color:var(--tx);font:inherit;font-size:15px;cursor:pointer}
+.gal{display:grid;grid-template-columns:1fr;gap:12px;margin-top:10px}
+.gal figure{margin:0;background:var(--sf);border:1px solid var(--ln);border-radius:12px;overflow:hidden}
+.gal img{display:block;width:100%;height:auto;background:#fff;cursor:zoom-in}
+.gal figcaption{padding:8px 12px;font-size:12px;color:var(--mu)}.gal figcaption a{color:var(--ac)}
+#zm img.fit{width:auto;max-width:100%;max-height:100%;object-fit:contain;margin:auto}
 </style></head><body><main>
-<h1>Carski novac</h1>
+<div id="home"><h1>Carski novac</h1>
 <p class="sub">Uporedi svoj nalaz s carevima od Avgusta do Teodosija. Za careve 3. veka (Valerijan do Florijan) tu su i tabele iz kataloga RIC V.1 iz 1927.</p>
 <div class="mine" id="mine"></div>
+<div id="res"></div>
 <input type="search" id="q" placeholder="Traži cara ili slova s natpisa" aria-label="Pretraga">
 <div class="f" id="f"></div>
 <div class="cnt" id="cnt"></div>
 <div id="list"></div>
-<details class="cr" id="cr"><summary>Izvori slika</summary><div id="crl"></div></details>
+<details class="cr" id="cr"><summary>Izvori slika</summary><div id="crl"></div></details></div>
+<div id="scr" hidden></div>
 <div id="t" role="status"></div>
 <div id="zm" data-a="zx"><img alt="Uvećana tabla"></div>
 </main>
 <script src="images.js"></script>
+<script src="baza.js"></script>
 <script>
 const E=[
 ["Karakala","Caracalla","198–217",1,"Namrgođeno lice, kratka kosa. Uveo antonijan 215. godine.","ANTONINVS PIVS AVG"],
@@ -139,7 +152,7 @@ const PL={"Valerian I":[1],"Gallienus":[1,2,3],"Valerian II":[4],"Saloninus":[5]
 const BL=["Bez brade","Kratka brada","Brada"];
 const Y=e=>{const m=e[2].match(/\d+/);return(/pre n\.e\./.test(e[2])?-1:1)*+m[0]};
 E.forEach((e,i)=>e.id=i);E.sort((a,b)=>Y(a)-Y(b));
-let S={q:"",b:-1,open:null,mine:null,ph:{}};
+let S={q:"",b:-1,open:null,mine:null,ph:{},v:0,car:null,nom:null,nomf:"",qv:null,db:null};
 try{S.ph=JSON.parse(localStorage.getItem("ph")||"{}");S.mine=localStorage.getItem("mine")}catch(e){}
 const $=id=>document.getElementById(id);
 function toast(m){const t=$("t");t.textContent=m;t.style.display="block";setTimeout(()=>t.style.display="none",3500)}
@@ -152,24 +165,116 @@ const stat=(IMG[e[1]]||[]).map(x=>`<figure><img src="${x[0]}" alt="${e[0]}"><fig
 const strip=stat+(S.mine?`<figure class="m"><img src="${S.mine}" alt="Moj novčić"><figcaption>Moj novčić</figcaption></figure>`:"")+ph.map((p,k)=>`<figure><img src="${p}" alt="${e.n}"><button class="x" data-a="del" data-i="${i}" data-k="${k}" aria-label="Obriši sliku">×</button><figcaption>${e.n}</figcaption></figure>`).join("");
 return `<div class="d"><p>${e[4]}</p><p class="lg">${e[5]}</p>${strip?`<div class="st">${strip}</div>`:"<p>Još nema slika. Dodaj svoje ili ih potraži na internetu.</p>"}${pl?`<p class="lg" style="margin-top:12px">Tabele iz kataloga (Webb, 1927)</p><div class="st">${pl}</div><p style="font-size:13px;color:var(--mu)">Dodirni tablu za uvećanje.</p>`:""}${ty?`<p class="lg" style="margin-top:12px">Tipovi reversa (iz kataloga)</p><ul class="ty">${ty}</ul><p style="font-size:12px;color:var(--mu)">Pročitano OCR-om iz kataloga Numismatica Ars Classica, zbirka Steinberg (1994). Moguće su greške u slovima.</p>`:""}<div class="row"><label class="btn">Dodaj sliku<input type="file" accept="image/*" multiple data-i="${i}"></label><a class="btn g" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(e[1]+" roman coin")}">Google slike</a><a class="btn g" target="_blank" rel="noopener" href="https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(e[1]+" coin")}&ns6=1">Wikimedia</a></div></div>`}
 function render(){
+$("home").hidden=S.v!==0;$("scr").hidden=S.v===0;
+if(S.v!==0){$("scr").innerHTML=scrHTML();return}
+$("res").innerHTML=resHTML();
 $("mine").innerHTML=`<div class="th">${S.mine?`<img src="${S.mine}" alt="">`:"slika"}</div><div><b>Moj novčić</b><p>Dodaj sliku aversa pa je uporedi sa svakim carem.</p><label class="btn">${S.mine?"Zameni sliku":"Dodaj sliku"}<input type="file" accept="image/*" data-i="mine"></label></div>`;
 $("f").innerHTML=[["Svi",-1],...BL.map((l,n)=>[l,n])].map(([l,n])=>`<button data-a="b" data-n="${n}" class="${S.b===n?"on":""}">${l}</button>`).join("");
 const q=S.q.toLowerCase();
 const L=E.map(e=>[e,e.id]).filter(([e])=>(S.b<0||e[3]===S.b)&&(!q||(e[0]+e[1]+e[5]+e[2]).toLowerCase().includes(q)));
 $("cnt").textContent=L.length+" careva";
-$("list").innerHTML=L.map(([e,i])=>{const o=S.open===i,ph=S.ph[i]||[];return `<article class="c"><button class="h" data-a="t" data-i="${i}" aria-expanded="${o}"><span class="av">${(ph[0]||CHART[e[1]]||(IMG[e[1]]&&IMG[e[1]][0][0]))?`<img src="${ph[0]||CHART[e[1]]||IMG[e[1]][0][0]}" alt="">`:e[0][0]}</span><span class="hd"><b>${e[0]}</b><i>${e[1]}, ${e[2]}</i></span><span class="bd">${BL[e[3]]}</span></button>${o?detail(e,i):""}</article>`}).join("")||'<p class="sub">Nema rezultata. Probaj kraći deo imena ili ukloni filter.</p>'}
+$("list").innerHTML=L.map(([e,i])=>{const ph=S.ph[i]||[];return `<article class="c"><button class="h" data-a="t" data-i="${i}"><span class="av">${(ph[0]||CHART[e[1]]||(IMG[e[1]]&&IMG[e[1]][0][0]))?`<img src="${ph[0]||CHART[e[1]]||IMG[e[1]][0][0]}" alt="">`:e[0][0]}</span><span class="hd"><b>${e[0]}</b><i>${e[1]}, ${e[2]}</i></span><span class="bd">${BL[e[3]]}</span></button></article>`}).join("")||'<p class="sub">Nema rezultata. Probaj kraći deo imena ili ukloni filter.</p>'}
 document.addEventListener("click",ev=>{const b=ev.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
-if(a==="zoom"){const z=$("zm");z.querySelector("img").src=PLATES[b.dataset.n];z.style.display="flex";z.scrollTop=0;return}
+if(a==="zoom"){const z=$("zm"),im=z.querySelector("img");im.className="";im.src=PLATES[b.dataset.n];z.style.alignItems="";z.style.justifyContent="";z.style.display="flex";z.scrollTop=0;return}
+if(a==="zi"){const z=$("zm"),im=z.querySelector("img");im.className="fit";im.src=b.dataset.src;z.style.alignItems="center";z.style.justifyContent="center";z.style.display="flex";return}
+if(a==="bk"){history.back();return}
+if(a==="nm"){nav(2,S.car,b.dataset.n);return}
+if(a==="nf"){S.nomf=b.dataset.n;rescore();return}
 if(a==="zx"){$("zm").style.display="none";return}
-if(a==="t"){const i=+b.dataset.i;S.open=S.open===i?null:i}
-else if(a==="b"){S.b=+b.dataset.n}
+if(a==="idf"){identify();return}
+if(a==="go"){nav(1,+b.dataset.i);return}
+if(a==="t"){nav(1,+b.dataset.i);return}
+if(a==="b"){S.b=+b.dataset.n}
 else if(a==="del"){S.ph[b.dataset.i].splice(+b.dataset.k,1);save()}
 render()});
 $("q").addEventListener("input",e=>{S.q=e.target.value;render()});
 document.addEventListener("change",async ev=>{const inp=ev.target;if(inp.type!=="file")return;const id=inp.dataset.i;
 for(const f of inp.files){const d=await shrink(f);if(id==="mine")S.mine=d;else(S.ph[id]=S.ph[id]||[]).push(d)}
-save();render()});
+save();render();if(id==="mine"&&S.mine){S.res=null;identify()}});
+
+/* ===== Prepoznavanje cara po slici ===== */
+const EN={};E.forEach(e=>EN[e[1]]=e);
+function loadJS(u){return new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>no(new Error("net"));document.head.appendChild(s)})}
+let MN=null;
+async function getModel(){if(MN)return MN;
+if(!window.tf)await loadJS("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
+if(!window.mobilenet)await loadJS("https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js");
+MN=await mobilenet.load({version:2,alpha:1.0});return MN}
+function loadImg(src){return new Promise(ok=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>ok(null);im.src=src})}
+function idb(){return new Promise((ok,no)=>{const r=indexedDB.open("cn",1);r.onupgradeneeded=()=>r.result.createObjectStore("e");r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function idbGet(k){try{const d=await idb();return await new Promise(ok=>{const q=d.transaction("e").objectStore("e").get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>ok(null)})}catch(e){return null}}
+async function idbSet(k,v){try{const d=await idb();await new Promise(ok=>{const t=d.transaction("e","readwrite");t.objectStore("e").put(v,k);t.oncomplete=()=>ok();t.onerror=()=>ok()})}catch(e){}}
+function prep(img){const N=224,c=document.createElement("canvas");c.width=c.height=N;const x=c.getContext("2d",{willReadFrequently:true});
+const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height,s=Math.min(w,h);
+x.drawImage(img,w/h>1.5?0:(w-s)/2,(h-s)/2,s,s,0,0,N,N);
+const d=x.getImageData(0,0,N,N),p=d.data,R=N/2,g=new Float32Array(N*N);let sum=0,n=0;
+for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){const i=y*N+xx;g[i]=.299*p[i*4]+.587*p[i*4+1]+.114*p[i*4+2];if((xx-R)**2+(y-R)**2<=R*R*.9){sum+=g[i];n++}}
+const m=sum/n;let v=0;
+for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){if((xx-R)**2+(y-R)**2<=R*R*.9){v+=(g[y*N+xx]-m)**2}}
+const sd=Math.sqrt(v/n)||1;
+for(let y=0;y<N;y++)for(let xx=0;xx<N;xx++){const i=y*N+xx,o=((xx-R)**2+(y-R)**2<=R*R*.9)?Math.max(0,Math.min(255,128+(g[i]-m)/sd*45)):128;p[i*4]=p[i*4+1]=p[i*4+2]=o;p[i*4+3]=255}
+x.putImageData(d,0,0);return c}
+async function embed(m,img){const t=m.infer(prep(img),true);const v=Float32Array.from(await t.data());t.dispose();let n=0;for(let i=0;i<v.length;i++)n+=v[i]*v[i];n=Math.sqrt(n)||1;for(let i=0;i<v.length;i++)v[i]/=n;return v}
+function refList(){const r=[];Object.keys(EN).forEach(n=>{
+if(typeof CHART!=="undefined"&&CHART[n])r.push({n,m:"",s:CHART[n]});
+((typeof IMG!=="undefined"&&IMG[n])||[]).forEach(x=>r.push({n,m:"",s:x[0]}));
+const b=(typeof BAZA!=="undefined"&&BAZA[n])||{};
+Object.keys(b).forEach(m=>b[m].forEach(x=>r.push({n,m,s:"baza/"+n.replace(/ /g,"_")+"/"+m+"/"+x.f})))});return r}
+function setBusy(t){S.busy=t;$("res").innerHTML=resHTML()}
+let working=false;
+async function identify(){
+if(working||!S.mine)return;working=true;S.res=null;S.qv=null;
+try{
+setBusy("Učitavam model (prvi put traje malo, treba internet)…");
+const m=await getModel();
+const refs=refList();
+const sig="v2:"+refs.length+":"+refs.reduce((a,r)=>a+r.s.length,0);
+let db=await idbGet("emb");
+if(!db||db.sig!==sig){
+db={sig,d:[]};let k=0;
+for(const r of refs){
+setBusy("Pripremam bazu careva… "+(++k)+"/"+refs.length+" (samo prvi put)");
+const im=await loadImg(r.s);if(im){try{db.d.push({n:r.n,m:r.m,v:await embed(m,im)})}catch(e){}}
+await new Promise(r=>setTimeout(r,0))}
+await idbSet("emb",db)}
+S.db=db;
+setBusy("Poredim tvoj novčić…");
+const qi=await loadImg(S.mine);if(!qi)throw new Error("img");
+S.qv=await embed(m,qi);score();
+}catch(e){toast("Prepoznavanje nije uspelo. Proveri internet i pokušaj ponovo.")}
+S.busy=null;working=false;$("res").innerHTML=resHTML()}
+function score(){const best={};
+for(const r of S.db.d){if(S.nomf&&r.m!==S.nomf)continue;let d=0;for(let i=0;i<S.qv.length;i++)d+=S.qv[i]*r.v[i];if(!(r.n in best)||d>best[r.n])best[r.n]=d}
+S.res=Object.keys(best).map(n=>({n,s:best[n]})).sort((a,b)=>b.s-a.s).slice(0,3)}
+function rescore(){if(S.qv&&S.db){score();$("res").innerHTML=resHTML()}}
+function thumbUrl(e){const ph=S.ph[e.id]||[];if(ph[0])return ph[0];if(typeof CHART!=="undefined"&&CHART[e[1]])return CHART[e[1]];
+if(typeof IMG!=="undefined"&&IMG[e[1]]&&IMG[e[1]][0])return IMG[e[1]][0][0];
+const n=noms(e);return n.length?bp(e,n[0][0],n[0][1][0].f):""}
+function resHTML(){
+if(S.busy)return `<div class="mine"><p>${S.busy}</p></div>`;
+if(!S.mine)return "";
+if(!S.qv)return `<div class="mine"><div><b>Prepoznavanje cara</b><button class="btn" data-a="idf">Prepoznaj cara</button></div></div>`;
+const av=e=>{const u=thumbUrl(e);return u?`<img src="${u}" alt="">`:e[0][0]};
+const chips=`<p>Nominacija mog novčića:</p><div class="f">`+[["","Ne znam"]].concat(NORD.map(n=>[n,NOMN[n]])).map(([n,l])=>`<button data-a="nf" data-n="${n}" class="${S.nomf===n?"on":""}">${l}</button>`).join("")+`</div>`;
+const list=S.res&&S.res.length?S.res.map(r=>{const e=EN[r.n];return `<article class="c" style="margin:8px 0 0"><button class="h" data-a="go" data-i="${e.id}"><span class="av">${av(e)}</span><span class="hd"><b>${e[0]}</b><i>${e[1]}, ${e[2]}</i></span><span class="bd">${Math.round(r.s*100)}%</span></button></article>`}).join(""):`<p>Nema slika te nominacije u bazi.</p>`;
+return `<div class="mine" style="display:block"><b>Najsličniji carevi (okvirno)</b><p>Procena po izgledu slike. Nije sigurno, proveri sam.</p>${list}${chips}<button class="btn g" data-a="idf">Pokušaj ponovo</button></div>`}
+/* ===== Ekrani: car i nominacija ===== */
+const NOMN={aureus:"Aureus",antoninijan:"Antoninijan",denarij:"Denarijus",sestercij:"Sestercijus",dupondije:"Dupondijus",as:"As",follis:"Follis",solidus:"Solidus",siliqua:"Siliqua",centenionalis:"Centenionalis",argenteus:"Argenteus"};
+const NORD=Object.keys(NOMN);
+const esc=t=>String(t||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const bp=(e,nom,f)=>"baza/"+e[1].replace(/ /g,"_")+"/"+nom+"/"+f;
+function noms(e){const b=(typeof BAZA!=="undefined"&&BAZA[e[1]])||{};return NORD.filter(n=>b[n]&&b[n].length).map(n=>[n,b[n]])}
+function nav(v,car,nom){S.v=v;S.car=car;S.nom=nom||null;history.pushState({v:v,car:car,nom:S.nom},"");render();window.scrollTo(0,0)}
+window.addEventListener("popstate",ev=>{const st=ev.state||{v:0};S.v=st.v||0;S.car=st.car;S.nom=st.nom||null;render()});
+history.replaceState({v:0},"");
+function scrHTML(){
+const e=E.find(x=>x.id===S.car);if(!e)return "";
+const bar=`<div class="bar"><button class="bk" data-a="bk">‹ Nazad</button><h2>${S.v===2?NOMN[S.nom]:e[0]}</h2></div>`;
+if(S.v===1){const ns=noms(e);
+return bar+`<p class="sub">${e[1]}, ${e[2]}</p>`+(ns.length?ns.map(([n,l])=>`<article class="c"><button class="h" data-a="nm" data-n="${n}"><span class="av"><img src="${bp(e,n,l[0].f)}" alt=""></span><span class="hd"><b>${NOMN[n]}</b><i>${l.length} ${l.length===1?"slika":"slike"}</i></span><span class="bd">›</span></button></article>`).join(""):`<p class="sub">Za ovog cara još nema slika po nominacijama.</p>`)+detail(e,e.id)}
+const l=((typeof BAZA!=="undefined"&&BAZA[e[1]])||{})[S.nom]||[];
+return bar+`<p class="sub">${e[0]}, ${e[1]}</p><div class="gal">`+l.map(x=>{const u=bp(e,S.nom,x.f);return `<figure><img src="${u}" loading="lazy" data-a="zi" data-src="${u}" alt="${esc(e[0])}, ${NOMN[S.nom]}"><figcaption>${esc(x.a)} · ${esc(x.l)} · <a href="${esc(x.u)}" target="_blank" rel="noopener">Wikimedia Commons</a></figcaption></figure>`}).join("")+`</div><p class="sub" style="margin-top:12px">Dodirni sliku za uvećanje.</p>`}
 render();
-$("crl").innerHTML=Object.keys(IMG).map(k=>IMG[k].map(x=>`<p><b>${k}</b>: ${x[1]} · <a href="${x[2]}" target="_blank" rel="noopener">Wikimedia Commons</a></p>`).join("")).join("")+"<p>Mali okrugli prikazi careva dolaze iz tabele nepoznatog izvora.</p>";
+$("crl").innerHTML=Object.keys(IMG).map(k=>IMG[k].map(x=>`<p><b>${k}</b>: ${x[1]} · <a href="${x[2]}" target="_blank" rel="noopener">Wikimedia Commons</a></p>`).join("")).join("")+"<p>Mali okrugli prikazi careva dolaze iz tabele nepoznatog izvora.</p><p>Slike novčića po nominacijama dolaze sa Wikimedia Commons. Autor i licenca stoje ispod svake slike.</p>";
 if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}})}
 </script></body></html>
