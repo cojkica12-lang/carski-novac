@@ -259,7 +259,7 @@ const chips=`<p>Nominacija mog novčića:</p><div class="f">`+[["","Ne znam"]].c
 const list=S.res&&S.res.length?S.res.map(r=>{const e=EN[r.n];return `<article class="c" style="margin:8px 0 0"><button class="h" data-a="go" data-i="${e.id}"><span class="av">${av(e)}</span><span class="hd"><b>${e[0]}</b><i>${e[1]}, ${e[2]}</i></span><span class="bd">${Math.round(r.s*100)}%</span></button></article>`}).join(""):`<p>Nema slika te nominacije u bazi.</p>`;
 return `<div class="mine" style="display:block"><b>Najsličniji carevi (okvirno)</b><p>Procena po izgledu slike. Nije sigurno, proveri sam.</p>${list}${chips}<button class="btn g" data-a="idf">Pokušaj ponovo</button></div>`}
 /* ===== Ekrani: car i nominacija ===== */
-const NOMN={aureus:"Aureus",antoninijan:"Antoninijan",denarij:"Denarijus",sestercij:"Sestercijus",dupondije:"Dupondijus",as:"As",follis:"Follis",solidus:"Solidus",siliqua:"Siliqua",centenionalis:"Centenionalis",argenteus:"Argenteus"};
+const NOMN={aureus:"Aureus",antoninijan:"Antoninijan",denarij:"Denarijus",sestercij:"Sestercijus",dupondije:"Dupondijus",as:"As",follis:"Follis",solidus:"Solidus",siliqua:"Siliqua",centenionalis:"Centenionalis",argenteus:"Argenteus",cistophorus:"Kistofor",quadrans:"Kvadrans",quinarius:"Kvinarijus"};
 const NORD=Object.keys(NOMN);
 const esc=t=>String(t||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const bp=(e,nom,f)=>"baza/"+e[1].replace(/ /g,"_")+"/"+nom+"/"+f;
@@ -273,7 +273,7 @@ const bar=`<div class="bar"><button class="bk" data-a="bk">‹ Nazad</button><h2
 if(S.v===1){const ns=noms(e);
 return bar+`<p class="sub">${e[1]}, ${e[2]}</p>`+(ns.length?ns.map(([n,l])=>`<article class="c"><button class="h" data-a="nm" data-n="${n}"><span class="av"><img src="${bp(e,n,l[0].f)}" alt=""></span><span class="hd"><b>${NOMN[n]}</b><i>${l.length} ${l.length===1?"slika":"slike"}</i></span><span class="bd">›</span></button></article>`).join(""):`<p class="sub">Za ovog cara još nema slika po nominacijama.</p>`)+detail(e,e.id)}
 const l=((typeof BAZA!=="undefined"&&BAZA[e[1]])||{})[S.nom]||[];
-return bar+`<p class="sub">${e[0]}, ${e[1]}</p><div class="gal">`+l.map(x=>{const u=bp(e,S.nom,x.f);return `<figure><img src="${u}" loading="lazy" data-a="zi" data-src="${u}" alt="${esc(e[0])}, ${NOMN[S.nom]}"><figcaption>${esc(x.a)} · ${esc(x.l)} · <a href="${esc(x.u)}" target="_blank" rel="noopener">Wikimedia Commons</a></figcaption></figure>`}).join("")+`</div><p class="sub" style="margin-top:12px">Dodirni sliku za uvećanje.</p>`}
+return bar+`<p class="sub">${e[0]}, ${e[1]}</p><div class="gal">`+l.map(x=>{const u=bp(e,S.nom,x.f);return `<figure><img src="${u}" loading="lazy" data-a="zi" data-src="${u}" alt="${esc(e[0])}, ${NOMN[S.nom]}"><figcaption>${x.u?`${esc(x.a)} · ${esc(x.l)} · <a href="${esc(x.u)}" target="_blank" rel="noopener">${x.u.includes("wikimedia")?"Wikimedia Commons":"OCRE"}</a>`:"Probna slika, nije za objavu"}</figcaption></figure>`}).join("")+`</div><p class="sub" style="margin-top:12px">Dodirni sliku za uvećanje.</p>`}
 render();
 $("crl").innerHTML=Object.keys(IMG).map(k=>IMG[k].map(x=>`<p><b>${k}</b>: ${x[1]} · <a href="${x[2]}" target="_blank" rel="noopener">Wikimedia Commons</a></p>`).join("")).join("")+"<p>Mali okrugli prikazi careva dolaze iz tabele nepoznatog izvora.</p><p>Slike novčića po nominacijama dolaze sa Wikimedia Commons. Autor i licenca stoje ispod svake slike.</p>";
 if("serviceWorker" in navigator){window.addEventListener("load",function(){try{navigator.serviceWorker.register("sw.js").catch(function(){})}catch(e){}})}
