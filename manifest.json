@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Carski novac",
-  "short_name": "Carski novac",
+  "name":"Roman Coin Identifier",
+  "short_name":"Roman Coins",
   "description": "Baza rimskih careva sa slikama novčića za poređenje.",
   "lang": "sr",
   "start_url": "./",
